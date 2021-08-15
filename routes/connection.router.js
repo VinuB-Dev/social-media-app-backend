@@ -37,8 +37,10 @@ router.post("/follow", async (req, res) => {
     const {userId} = req.body;
     const user = await Connection.findByIdAndUpdate(req.uid, {$push: {following: userId}});
     const follower = await Connection.findByIdAndUpdate(userId, {$push: {followers: req.uid}});
+    const following = await Connection.findById(req.uid, 'following').populate('following','-password');
     res.status(200).json({
-      success: true
+      success: true,
+      following:following
     });
   }catch(e){
     res.status(500).json({
@@ -55,8 +57,10 @@ router.post("/unfollow", async (req, res) => {
     const {userId} = req.body;
     const user = await Connection.findByIdAndUpdate(req.uid, {$pull: {following: userId}});
     const follower = await Connection.findByIdAndUpdate(userId, {$pull: {followers: req.uid}});
+    const following = await Connection.findById(req.uid, 'following').populate('following','-password');
     res.status(200).json({
-      success: true
+      success: true,
+      following:following
     });
   }catch(e){
     res.status(500).json({
