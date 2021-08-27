@@ -4,13 +4,15 @@ const app = express();
 var cors = require('cors')
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({limit: '50mb'}));
+app.use(express.urlencoded({limit: '50mb'}));
 const { connection } = require("./db_connect");
 
 connection();
 const auth_router = require("./routes/auth.router")
 const connection_router = require("./routes/connection.router")
 const tweet_router = require("./routes/tweet.router")
+const user_router = require("./routes/user.router")
 const auth = require("./middleware/auth")
 
 app.get('/', (req, res) => {
@@ -20,6 +22,7 @@ app.get('/', (req, res) => {
 app.use('/auth', auth_router)
 app.use('/connection',auth, connection_router)
 app.use('/tweet',auth, tweet_router)
+app.use('/user',auth, user_router)
 
 app.use((req, res) => {
   res.status(404).json({ sucess: false, message: "route not found on server please check" })

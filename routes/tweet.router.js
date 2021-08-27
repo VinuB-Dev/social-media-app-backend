@@ -7,8 +7,8 @@ const Tweet = require("../models/tweet.model")
 router.get('/', async (req, res) => {
   const followingIds = await Connection.find({_id: req.uid}, 'following');
   let sort = {createdAt: -1};
-  let tweets = await Tweet.find({user:req.uid}).populate('user','-password').sort(sort);
-  const all_tweets = await Tweet.find({}).populate('user','-password').sort(sort);
+  let tweets = await Tweet.find({user:req.uid}).populate('user','-password').populate('comments.user','-password').sort(sort);
+  const all_tweets = await Tweet.find({}).populate('user','-password').populate('comments.user','-password').sort(sort);
   if(followingIds.length>0)
   {
   followingIds[0].following.map((ids)=>{
@@ -20,7 +20,6 @@ router.get('/', async (req, res) => {
     })
   })
   }
-
   const user = await User.findById(req.uid,'profileImg name tag about');
   
   res.status(200).json({
@@ -32,7 +31,7 @@ router.get('/', async (req, res) => {
 
 router.get('/getTweets', async (req, res) => {
   const { userId } = req.body;
-  const tweets = await Tweet.find({_id: userId});
+  const tweets = await Tweet.find({_id: userId}).populate('user','-password');
   res.json({
     success: true,
     tweets
@@ -107,7 +106,7 @@ router.get('/:userId', async (req, res) => {
 router.post('/addlike', async (req, res) => {
   try{
   const {tweetId} = req.body;
-  let tweet = await Tweet.findByIdAndUpdate(tweetId, {$inc:{likes: 1}});
+  const user = await Tweet.findByIdAndUpdate(tweetId, {$push: {likedBy: req.uid}});
   res.status(200).json({
     success: true
   });
@@ -125,7 +124,24 @@ router.post('/addlike', async (req, res) => {
 router.post('/removelike', async (req, res) => {
   try{
   const {tweetId} = req.body;
-  let tweet = await Tweet.findByIdAndUpdate(tweetId, {$inc:{likes: -1}});
+  const user = await Tweet.findByIdAndUpdate(tweetId, {$pull: {likedBy: req.uid}});
+  res.status(200).json({
+    success: true
+  });}
+  catch(e){
+    res.status(400).json({
+        success: false,
+        error: {
+          message: e.message
+        }
+      });
+  }
+})
+
+router.post('/addComment', async (req, res) => {
+  try{
+  const {tweetId,comment} = req.body;
+  const user = await Tweet.findByIdAndUpdate(tweetId, {$push: {comments: {user:req.uid,comment:comment}}});
   res.status(200).json({
     success: true
   });}
